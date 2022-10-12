@@ -1,34 +1,21 @@
 import time
 
 import network
-import usocket as socket
 from machine import Pin
+
+from lib.microdot import Microdot, Request
 
 from config import CONFIG
 from secrets import SECRETS
 
 
+app = Microdot()
+
+
 def start() -> None:
     setup_wifi()
     setup_io()
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('', 80))
-    s.listen(5)
-
-    while True:
-        conn, addr = s.accept()
-
-        request = conn.recv(1024)
-        request = str(request)
-
-        if request.find('/pulse'):
-            send_pulse()
-
-        conn.send('HTTP/1.1 200 OK\n')
-        conn.send('Content-Type: text/html\n')
-        conn.send('Connection: close\n\n')
-        conn.close()
+    app.run(debug=True)
 
 
 def setup_io() -> None:
@@ -46,6 +33,11 @@ def send_pulse() -> None:
     pin.on()
     time.sleep(CONFIG["pulse_duration"])
     pin.off()
+
+
+@app.route('/pulse', methods=["POST"])
+def index(request:Request):
+    send_pulse()
 
 
 if __name__ == "__main__":
