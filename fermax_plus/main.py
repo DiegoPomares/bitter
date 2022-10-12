@@ -1,7 +1,8 @@
 import time
 
-from machine import Pin
 import network
+import usocket as socket
+from machine import Pin
 
 from config import CONFIG
 from secrets import SECRETS
@@ -11,10 +12,23 @@ def start() -> None:
     setup_wifi()
     setup_io()
 
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', 80))
+    s.listen(5)
+
     while True:
-        print("Pulse!")
-        send_pulse()
-        time.sleep(1)
+        conn, addr = s.accept()
+
+        request = conn.recv(1024)
+        request = str(request)
+
+        if request.find('/pulse'):
+            send_pulse()
+
+        conn.send('HTTP/1.1 200 OK\n')
+        conn.send('Content-Type: text/html\n')
+        conn.send('Connection: close\n\n')
+        conn.close()
 
 
 def setup_io() -> None:
