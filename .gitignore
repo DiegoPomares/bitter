@@ -1,0 +1,3 @@
+/.micropy
+SECRET_*
+secrets.py
