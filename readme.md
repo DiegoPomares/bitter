@@ -15,6 +15,9 @@ esptool.py --port "$SERIAL_DEVICE" --baud 460800 write_flash --flash_size=detect
 
 ## Notes
 
-- IntelliSense [setup](https://lemariva.com/blog/2019/08/micropython-vsc-ide-intellisense).
+- IntelliSense setup [instructions](https://lemariva.com/blog/2019/08/micropython-vsc-ide-intellisense).
 - The `MarkupSafe` dev dependency is pinned to version `2.0.1` as `micropy-cli` wouldn't work otherwise.
-- The [microdot](https://github.com/miguelgrinberg/microdot) framework was cross-compiled using mpy-cross, otherwise the esp8266 would run out of memory when compiling it itself.
+- The [microdot](https://github.com/miguelgrinberg/microdot) framework was cross-compiled into an .mpy module using `mpy-cross`, otherwise the esp8266 would run out of memory when compiling it itself.
+- The `mpy-cross` version has to match the MicroPython firmware version, so in this project the tool was compiled from a tag instead of the master branch.
+- Tips on how to work around memory [constrains](http://hinch.me.uk/html/reference/constrained.html)
+- Additional [reference](https://github.com/peterhinch/micropython-samples/blob/master/README.md)

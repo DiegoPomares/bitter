@@ -1,3 +1,6 @@
 /.micropy
+/dist
+/toolchain
+
 SECRET_*
 secrets.py

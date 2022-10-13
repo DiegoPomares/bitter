@@ -3,7 +3,7 @@ import time
 import network
 from machine import Pin
 
-from lib.microdot import Microdot, Request
+from vendor.microdot import Microdot, Request
 
 from config import CONFIG
 from secrets import SECRETS
@@ -35,7 +35,7 @@ def send_pulse() -> None:
     pin.off()
 
 
-@app.route('/pulse', methods=["POST"])
+@app.post("/pulse")
 def index(request:Request):
     send_pulse()
 
