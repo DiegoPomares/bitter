@@ -12,10 +12,10 @@ from secrets import SECRETS
 app = Microdot()
 
 
-def start() -> None:
+def main() -> None:
     setup_wifi()
     setup_io()
-    app.run(debug=True)
+    app.run(port=80, debug=True)
 
 
 def setup_io() -> None:
@@ -38,7 +38,3 @@ def send_pulse() -> None:
 @app.post("/pulse")
 def index(request:Request):
     send_pulse()
-
-
-if __name__ == "__main__":
-    start()
