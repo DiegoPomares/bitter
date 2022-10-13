@@ -1,9 +1,9 @@
-import time
+import uasyncio
 
 import network
 from machine import Pin
 
-from vendor.microdot import Microdot, Request
+from vendor.microdot_asyncio import Microdot, Request
 
 from config import CONFIG
 from secrets import SECRETS
@@ -28,13 +28,13 @@ def setup_wifi() -> None:
     sta_if.connect(SECRETS["ssid"], SECRETS["key"])
 
 
-def send_pulse() -> None:
+async def send_pulse() -> None:
     pin = Pin(CONFIG["output_pin"])
     pin.on()
-    time.sleep(CONFIG["pulse_duration"])
+    await uasyncio.sleep(CONFIG["pulse_duration"])
     pin.off()
 
 
 @app.post("/pulse")
-def index(request:Request):
-    send_pulse()
+async def index(request:Request):
+    await send_pulse()
