@@ -21,6 +21,24 @@ SOURCE_FILES := $(shell find src/ -type f)
 
 all: push
 
+        # find dist/vendor -type f -name "*.py" \
+		# 	-exec toolchain/mpy-cross {} \; \
+		# 	-exec touch -r {} \; \
+		# 	-exec rm -f {} \; \
+		# 	; \
+
+
+# Transform a .py file into an .mpy file, while preserving timestamps
+define compile_mpy_script
+	src_file="$$1"
+	dst_file="$${src_file%.py}.mpy"
+
+	toolchain/mpy-cross -o "$$dst_file" "$$src_file"
+	touch -r "$$src_file" "$$dst_file"
+
+	rm -f "$$src_file"
+endef
+export compile_mpy_script
 
 dist: toolchain $(SOURCE_FILES)  ## Compile the app into a distributable bundle
 	rm -rf dist
@@ -28,7 +46,8 @@ dist: toolchain $(SOURCE_FILES)  ## Compile the app into a distributable bundle
 	touch dist
 
 	if [ -d dist/vendor ]; then \
-        find dist/vendor -type f -name "*.py" -exec toolchain/mpy-cross {} \; -exec rm -f {} \; ; \
+        find dist/vendor -type f -name "*.py" \
+			-exec bash -c "$$compile_mpy_script" dummy {} \; ; \
     fi
 
 
