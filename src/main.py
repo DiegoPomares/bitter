@@ -1,40 +1,15 @@
-import uasyncio
+import api
+import gpio
+import wifi
 
-import network
-from machine import Pin
-
-from vendor.microdot_asyncio import Microdot, Request
-
-from config import CONFIG
-from secrets import SECRETS
-
-
-app = Microdot()
+from config import read_config
 
 
 def main() -> None:
-    setup_wifi()
-    setup_io()
-    app.run(port=80, debug=True)
+    wifi_config = read_config("/config/wifi.secret.json")
+    wifi.setup_wifi(wifi_config)
 
+    pin_aliases = read_config("/config/pin_aliases.json")
+    gpio.setup(pin_aliases)
 
-def setup_io() -> None:
-    Pin(CONFIG["output_pin"], Pin.OUT)
-
-
-def setup_wifi() -> None:
-    sta_if = network.WLAN(network.STA_IF)
-    sta_if.active(True)
-    sta_if.connect(SECRETS["ssid"], SECRETS["key"])
-
-
-async def send_pulse() -> None:
-    pin = Pin(CONFIG["output_pin"])
-    pin.on()
-    await uasyncio.sleep(CONFIG["pulse_duration"])
-    pin.off()
-
-
-@app.post("/pulse")
-async def index(request:Request):
-    await send_pulse()
+    api.start()
