@@ -6,7 +6,7 @@ This is a MicroPython application that provides an HTTP API to control GPIO port
 
 - **WeMos D1 Mini board:** the application works with other esp8266 boards but, the pins are currently labeled for this one:
 
-[![](doc/wemosd1.webp)](https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/)
+![Board pinout](doc/wemosd1.webp)
 
 - **Python 3.9.*:** It has to be 3.9.* specifically for compatibility with MicroPython
 - **[Poetry](https://python-poetry.org/docs/#installation):** Dependency management tool
