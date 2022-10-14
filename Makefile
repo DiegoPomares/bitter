@@ -13,22 +13,13 @@ MICROPYTHON_VERSION := v1.19.1
 MICROPYTHON_RELEASE := esp8266-20220618-$(MICROPYTHON_VERSION).bin
 MICROPYTHON_FIRMWARE_URL := https://micropython.org/resources/firmware/$(MICROPYTHON_RELEASE)
 MICROPYTHON_REPO_URL := https://github.com/micropython/micropython.git
-# This doesn't exactly match the current board/version, but was the closest
+# This doesn't exactly match the esp8622, but it was the closest
 MICROPYTHON_STUBS := esp32-micropython-1.15.0
 
 SOURCE_FILES := $(shell find src/ -type f)
 
 
-all: push
-
-        # find dist/vendor -type f -name "*.py" \
-		# 	-exec toolchain/mpy-cross {} \; \
-		# 	-exec touch -r {} \; \
-		# 	-exec rm -f {} \; \
-		# 	; \
-
-
-# Transform a .py file into an .mpy file, while preserving timestamps
+# This snippet transforms a .py file into an .mpy file, while preserving timestamps
 define compile_mpy_script
 	src_file="$$1"
 	dst_file="$${src_file%.py}.mpy"
@@ -45,8 +36,8 @@ dist: toolchain $(SOURCE_FILES)  ## Compile the app into a distributable bundle
 	cp -rp src dist
 	touch dist
 
-	if [ -d dist/vendor ]; then \
-        find dist/vendor -type f -name "*.py" \
+	if [ -d dist ]; then \
+        find dist -type f -name "*.py" \
 			-exec bash -c "$$compile_mpy_script" dummy {} \; ; \
     fi
 
@@ -95,6 +86,7 @@ push: dialout dist  ## Push bundled application to the esp board and restart
 		--all --mirror dist/ "$(RSHELL_BOARD_PATH)/app"
 
 	poetry run rshell $(RSHELL_ARGS) repl '~ import machine ~ machine.reset() ~'
+
 
 .PHONY: rshell
 rshell: toolchain  ## Open rshell
