@@ -13,8 +13,6 @@ MICROPYTHON_VERSION := v1.19.1
 MICROPYTHON_RELEASE := esp8266-20220618-$(MICROPYTHON_VERSION).bin
 MICROPYTHON_FIRMWARE_URL := https://micropython.org/resources/firmware/$(MICROPYTHON_RELEASE)
 MICROPYTHON_REPO_URL := https://github.com/micropython/micropython.git
-# This doesn't exactly match the esp8622, but it was the closest
-MICROPYTHON_STUBS := esp32-micropython-1.15.0
 
 SOURCE_FILES := $(shell find src/ -type f)
 
@@ -23,8 +21,9 @@ SOURCE_FILES := $(shell find src/ -type f)
 define compile_mpy_script
 	src_file="$$1"
 	dst_file="$${src_file%.py}.mpy"
+	orig_file_name="app/$${src_file#dist/}"
 
-	toolchain/mpy-cross -o "$$dst_file" "$$src_file"
+	toolchain/mpy-cross -s "$$orig_file_name" -o "$$dst_file" "$$src_file"
 	touch -r "$$src_file" "$$dst_file"
 
 	rm -f "$$src_file"

@@ -2,16 +2,15 @@
 name = "fermax_plus"
 version = "0.0.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["DiegoPomares"]
 
 [tool.poetry.dependencies]
 python = "~3.9"
 
 [tool.poetry.dev-dependencies]
 esptool = "^4.3"
-micropy-cli = "^3.6.0"
-MarkupSafe = "==2.0.1"
 rshell = "^0.0.31"
+micropython-esp8266-stubs = "1.19.1.*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
