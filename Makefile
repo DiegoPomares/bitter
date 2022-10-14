@@ -78,12 +78,15 @@ flash-board: dialout toolchain  ## Write MicroPython firmware into the esp board
 
 
 .PHONY: push
-push: dialout dist  ## Push bundled application to the esp board and restart
+push: dialout dist config skel  ## Push bundled application to the esp board and restart
 	poetry run rshell $(RSHELL_ARGS) rsync \
 		--all skel/ "$(RSHELL_BOARD_PATH)"
 
 	poetry run rshell $(RSHELL_ARGS) rsync \
 		--all --mirror dist/ "$(RSHELL_BOARD_PATH)/app"
+
+	poetry run rshell $(RSHELL_ARGS) rsync \
+		--all --mirror config/ "$(RSHELL_BOARD_PATH)/config"
 
 	poetry run rshell $(RSHELL_ARGS) repl '~ import machine ~ machine.reset() ~'
 

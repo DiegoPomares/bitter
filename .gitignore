@@ -3,4 +3,4 @@
 /toolchain
 
 SECRET_*
-secrets.py
+*.secret.*

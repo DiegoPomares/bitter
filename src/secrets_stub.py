@@ -1,4 +1,0 @@
-SECRETS = {
-    "ssid": "",
-    "key": "",
-}
