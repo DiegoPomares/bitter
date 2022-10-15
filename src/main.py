@@ -1,15 +1,19 @@
-import api
+import config
 import gpio
+import routes
 import wifi
 
-from config import read_config
+from vendor.microdot_asyncio import Microdot
 
 
 def main() -> None:
-    wifi_config = read_config("/config/wifi.secret.json")
-    wifi.setup_wifi(wifi_config)
+    wifi_config = config.read_config("/config/wifi.secret.json")
+    wifi.setup(wifi_config)
 
-    pin_aliases = read_config("/config/pin_aliases.json")
+    pin_aliases = config.read_config("/config/pin_aliases.json")
     gpio.setup(pin_aliases)
 
-    api.start()
+    app = Microdot()
+    routes.setup(app)
+    app.run(port=80, debug=True)
+

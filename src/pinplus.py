@@ -18,7 +18,14 @@ class PinPlus:
         self._pin.init(*args, **kwargs)
 
     def value(self, x:Optional[Any]=None) -> Optional[int]:
-        if self.invert and x is not None:
+        if x is None:
+            pin_value = self._pin.value()
+            if self.invert:
+                pin_value = pin_value ^ 1
+
+            return pin_value
+
+        if self.invert:
             x = not bool(x)
 
         return self._pin.value(x)

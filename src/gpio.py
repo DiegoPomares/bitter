@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from pinplus import PinPlus
 
@@ -15,9 +15,12 @@ def configure_pins() -> None:
     pin_id = pin_aliases["led"]
     pin_config[pin_id] = PinPlus(pin_id, PinPlus.Pin.OUT, value=1, invert=True)
 
+    pin_id = pin_aliases["d1"]
+    pin_config[pin_id] = PinPlus(pin_id, PinPlus.Pin.OUT, value=0)
 
-def pin(pin_id_alias:Union[str, int]) -> PinPlus:
+
+def pin(pin_id_alias:Union[str, int]) -> Optional[PinPlus]:
     if isinstance(pin_id_alias, str):
         pin_id_alias = pin_aliases[pin_id_alias]
 
-    return pin_config[pin_id_alias]
+    return pin_config.get(pin_id_alias)
