@@ -40,12 +40,14 @@ newgrp dialout
 # you disable the Python interpreter in the serial port and get locked out
 make flash-board
 
+# TODO *********************************************************************************************
 # Configure WiFi
 make setup-wifi
 
-# Bundle the application and push it to the esp board
-make push
+# Bundle the application, push it to the esp boar and reset the board
+make push restart
 
+# TODO *********************************************************************************************
 # Get the IP address of the board, you might need to run this several times
 # while the board gets an IP
 make show-ip
@@ -61,7 +63,15 @@ curl -H "Content-Type: application/json" -X POST '{}' "http://$ESP_BOARD_IP/pins
 
 ### HTTP API spec
 
-TODO
+```json
+{
+  "repeat": <NUMBER OF TIMES>,
+  "actions": [
+    "on" | "off" | "delay <MS>",
+    ...
+  ]
+}
+```
 
 ## Development
 
@@ -71,36 +81,34 @@ TODO
 # See available commands
 make
 
-# Optional: Configure MicroPython stubs for VSCode
-make vscode
-
 # Open rshell, useful to check the board's filesystem under /pyboard
 make rshell
 
 # Open a Python interpreter in the esp board, useful for debugging/troubleshooting
 make repl
 
-# Push code changes to the board, it uses rshell's rsync to modify only the
-# files that need an update
+# Push code changes to the board without a restart, it uses rshell's rsync
+# to modify only the files that need an update
 make push
+
+# Attach to the Python interpreter and start the application, useful to see logs
+make attach
 ```
 
 ### Project structure
 
 The project has a very simple structure:
 
-- **`skel/`**: Scaffold, these files are used to launch the application automatically when the board boots; the contents of this directory are copied as is into the root directory of the board
+- **`skel/`**: Scaffold, these files are used to launch the application automatically when the board boots and to setup low level board configuration; the contents of this directory are copied as is into the root directory of the board
 - **`config/`**: This directory contains the application configuration in json files; it's copied as-is into the root directory of the board
 - **`src/`**: Application source code, the `make push` command synchronizes this directory under the `/app` in the board
   - **`src/vendor`**: Third party libraries used in this project
 
 ## Notes
 
-- IntelliSense setup [instructions](https://lemariva.com/blog/2019/08/micropython-vsc-ide-intellisense)
-- The `MarkupSafe` dev dependency is pinned to version `2.0.1` as `micropy-cli` wouldn't work otherwise
 - Source code files under `src` are cross-compiled using `mpy-cross`, this is important because the board runs out of memory when compiling some of the modules itself, for example [microdot](https://github.com/miguelgrinberg/microdot)
 - The `mpy-cross` version has to match the MicroPython firmware version, so the tool has to be compiled from a tag instead of the master branch
 - Tips on how to work around memory [constrains](http://hinch.me.uk/html/reference/constrained.html)
 - Additional [resources](https://github.com/peterhinch/micropython-samples/blob/master/README.md)
-- You'll have to use [newgrp](https://linux.die.net/man/1/newgrp) in order to update your user's group membership, otherwise log out and log in.
+- Adding a user to a group with `adduser` doesn't automatically updates the group membership status in the current session; you'll have to use [newgrp](https://linux.die.net/man/1/newgrp), or log out and log in, so that the group becomes effective.
 - If you disable [UART0](https://docs.micropython.org/en/latest/esp8266/quickref.html#uart-serial-bus) you won't be able to connect to the board with the USB interface, you'll have to flash the firmware again do to so
