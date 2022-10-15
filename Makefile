@@ -59,6 +59,7 @@ toolchain/mpy-cross:
 
 
 toolchain/$(MICROPYTHON_RELEASE):
+	mkdir -p toolchain
 	wget -O "toolchain/$(MICROPYTHON_RELEASE)" "$(MICROPYTHON_FIRMWARE_URL)"
 
 
@@ -87,8 +88,6 @@ push: dialout dist config skel  ## Push bundled application to the esp board and
 	poetry run rshell $(RSHELL_ARGS) rsync \
 		--all --mirror config/ "$(RSHELL_BOARD_PATH)/config"
 
-	poetry run rshell $(RSHELL_ARGS) repl '~ import machine ~ machine.reset() ~'
-
 
 .PHONY: rshell
 rshell: toolchain  ## Open rshell
@@ -98,6 +97,16 @@ rshell: toolchain  ## Open rshell
 .PHONY: repl
 repl: toolchain  ## Open a Python interpreter in the esp board
 	exec poetry run rshell $(RSHELL_ARGS) repl
+
+
+.PHONY: reset
+reset: toolchain  ## Restart the board
+	poetry run rshell $(RSHELL_ARGS) repl '~ import machine ~ machine.reset() ~'
+
+
+.PHONY: attach
+attach: toolchain  ## Attach to the Python interpreter and start the application
+	poetry run rshell $(RSHELL_ARGS) repl '~ exec(open("main.py").read())'
 
 
 .PHONY: wipe
