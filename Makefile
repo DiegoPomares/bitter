@@ -83,10 +83,13 @@ push: dialout dist config skel  ## Push bundled application to the esp board and
 		--all skel/ "$(RSHELL_BOARD_PATH)"
 
 	poetry run rshell $(RSHELL_ARGS) rsync \
-		--all --mirror dist/ "$(RSHELL_BOARD_PATH)/app"
+		--all --mirror config/ "$(RSHELL_BOARD_PATH)/config"
 
 	poetry run rshell $(RSHELL_ARGS) rsync \
-		--all --mirror config/ "$(RSHELL_BOARD_PATH)/config"
+		--all --mirror dist/lib/ "$(RSHELL_BOARD_PATH)/lib"
+
+	poetry run rshell $(RSHELL_ARGS) rsync \
+		--all --mirror dist/app/ "$(RSHELL_BOARD_PATH)/app"
 
 
 .PHONY: rshell
