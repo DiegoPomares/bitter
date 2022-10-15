@@ -14,16 +14,16 @@ MICROPYTHON_RELEASE := esp8266-20220618-$(MICROPYTHON_VERSION).bin
 MICROPYTHON_FIRMWARE_URL := https://micropython.org/resources/firmware/$(MICROPYTHON_RELEASE)
 MICROPYTHON_REPO_URL := https://github.com/micropython/micropython.git
 
-SOURCE_FILES := $(shell find src/ -type f)
+SOURCE_FILES := $(shell find lib src -type f)
 
 
 # This snippet transforms a .py file into an .mpy file, while preserving timestamps
 define compile_mpy_script
 	src_file="$$1"
+	final_path="/$$src_file"
 	dst_file="$${src_file%.py}.mpy"
-	orig_file_name="app/$${src_file#dist/}"
 
-	toolchain/mpy-cross -s "$$orig_file_name" -o "$$dst_file" "$$src_file"
+	../toolchain/mpy-cross -s "$$final_path" -o "$$dst_file" "$$src_file"
 	touch -r "$$src_file" "$$dst_file"
 
 	rm -f "$$src_file"
@@ -32,13 +32,13 @@ export compile_mpy_script
 
 dist: toolchain $(SOURCE_FILES)  ## Compile the app into a distributable bundle
 	rm -rf dist
-	cp -rp src dist
-	touch dist
+	mkdir dist
 
-	if [ -d dist ]; then \
-        find dist -type f -name "*.py" \
-			-exec bash -c "$$compile_mpy_script" dummy {} \; ; \
-    fi
+	cp -rp lib dist
+	cp -rp src dist/app
+
+	cd dist && find * -type f -name "*.py" \
+		-exec bash -c "$$compile_mpy_script" find_exec_snippet {} \; ; \
 
 
 toolchain: toolchain/mpy-cross toolchain/$(MICROPYTHON_RELEASE)  ## Setup build tools

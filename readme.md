@@ -37,11 +37,11 @@ sudo adduser $USERNAME dialout
 newgrp dialout
 
 # Flash MicroPython into the esp board, only ever needed once unless
-# you disable the Python interpreter in the serial port and get locked out
+# you disable the Python interpreter in UART0 and get locked out
 make flash-board
 
 # TODO *********************************************************************************************
-# Configure WiFi
+# Configure WiFi, this just generates the config/wifi.secret.json file
 make setup-wifi
 
 # Bundle the application, push it to the esp boar and reset the board
@@ -55,10 +55,10 @@ make show-ip
 ## Test
 
 # Get onboard led status
-curl "http://$ESP_BOARD_IP/pins/led/"
+curl "http://$ESP_BOARD_IP/gpio/led/"
 
 # Turn on the onboard led
-curl -H "Content-Type: application/json" -X POST '{}' "http://$ESP_BOARD_IP/pins/led/"
+curl -H "Content-Type: application/json" -X POST '{"script": "on"}' "http://$ESP_BOARD_IP/gpio/led/"
 ```
 
 ### HTTP API spec
@@ -66,10 +66,7 @@ curl -H "Content-Type: application/json" -X POST '{}' "http://$ESP_BOARD_IP/pins
 ```json
 {
   "repeat": <NUMBER OF TIMES>,
-  "actions": [
-    "on" | "off" | "delay <MS>",
-    ...
-  ]
+  "script": <COMMAND> | [<COMMAND>, ...]
 }
 ```
 
@@ -99,14 +96,15 @@ make attach
 
 The project has a very simple structure:
 
-- **`skel/`**: Scaffold, these files are used to launch the application automatically when the board boots and to setup low level board configuration; the contents of this directory are copied as is into the root directory of the board
 - **`config/`**: This directory contains the application configuration in json files; it's copied as-is into the root directory of the board
-- **`src/`**: Application source code, the `make push` command synchronizes this directory under the `/app` in the board
+- **`skel/`**: Scaffold, these files are used to launch the application automatically when the board boots and to setup low level base board configuration; the contents of this directory are copied as is into the root directory of the board
+- **`lib/`**: Python standard library modules that aren't included by default in MicroPython; the contents of this directory copied into `/lib` in the board with rsync
+- **`src/`**: Application source code; the contents of this directory copied into `/app` in the board with rsync
   - **`src/vendor`**: Third party libraries used in this project
 
 ## Notes
 
-- Source code files under `src` are cross-compiled using `mpy-cross`, this is important because the board runs out of memory when compiling some of the modules itself, for example [microdot](https://github.com/miguelgrinberg/microdot)
+- Source code files under `src` and `lib` are cross-compiled using `mpy-cross`, this is important because the board runs out of memory when compiling some of the modules itself, for example [microdot](https://github.com/miguelgrinberg/microdot)
 - The `mpy-cross` version has to match the MicroPython firmware version, so the tool has to be compiled from a tag instead of the master branch
 - Tips on how to work around memory [constrains](http://hinch.me.uk/html/reference/constrained.html)
 - Additional [resources](https://github.com/peterhinch/micropython-samples/blob/master/README.md)
