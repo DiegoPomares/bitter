@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import machine
 
@@ -9,6 +9,7 @@ class PinPlus:
 
     def __init__(self, pin_id:int, mode:int=..., pull:int=..., *, value:Any=..., drive:int=..., alt:int=...,
                  invert:bool=False):
+        self._pin_id = pin_id
         self.invert = invert
         if self.invert and value is not ...:
             value = not bool(value)
@@ -63,3 +64,9 @@ class PinPlus:
 
         args, kwargs = self._filter_ellipsis(priority=priority, wake=wake, hard=hard)
         self._pin.irq(callback, trigger, *args, **kwargs)
+
+    def state(self) -> Dict[str, Any]:
+        pass
+
+    def modulate(script:List[str]) -> Callable[[], None]:
+        pass
