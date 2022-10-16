@@ -1,4 +1,4 @@
-# Fermax PLUS
+# ⚠️ Work in progress ⚠️
 
 This is a MicroPython application that provides an HTTP API to control GPIO ports remotely.
 
@@ -90,6 +90,9 @@ make push
 
 # Attach to the Python interpreter and start the application, useful to see logs
 make attach
+
+# Run this after making changes to deploy, run, and see the logs, useful for debugging
+make push reset attach
 ```
 
 ### Project structure
@@ -106,7 +109,8 @@ The project has a very simple structure:
 
 - Source code files under `src` and `lib` are cross-compiled using `mpy-cross`, this is important because the board runs out of memory when compiling some of the modules itself, for example [microdot](https://github.com/miguelgrinberg/microdot)
 - The `mpy-cross` version has to match the MicroPython firmware version, so the tool has to be compiled from a tag instead of the master branch
-- Tips on how to work around memory [constrains](http://hinch.me.uk/html/reference/constrained.html)
-- Additional [resources](https://github.com/peterhinch/micropython-samples/blob/master/README.md)
 - Adding a user to a group with `adduser` doesn't automatically updates the group membership status in the current session; you'll have to use [newgrp](https://linux.die.net/man/1/newgrp), or log out and log in, so that the group becomes effective.
 - If you disable [UART0](https://docs.micropython.org/en/latest/esp8266/quickref.html#uart-serial-bus) you won't be able to connect to the board with the USB interface, you'll have to flash the firmware again do to so
+- Python standard library [ports](https://github.com/micropython/micropython-lib/tree/master/python-stdlib) not included in MicroPython by default
+- Tips on how to work around memory [constrains](http://hinch.me.uk/html/reference/constrained.html)
+- Additional [resources](https://github.com/peterhinch/micropython-samples/blob/master/README.md)

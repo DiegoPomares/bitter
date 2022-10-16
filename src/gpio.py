@@ -3,24 +3,25 @@ from typing import Dict, Optional, Union
 from pinplus import PinPlus
 
 pin_aliases:Dict[str, int] = {}
-pin_config:Dict[str, PinPlus] = {}
+pin_config:Dict[int, PinPlus] = {}
 
 
 def setup(aliases:Dict[str, int]) -> None:
     pin_aliases.update(aliases)
-    configure_pins()
+    _initialize_pins()
+    # TODO remove
+    pin_config["led"].init(PinPlus.Pin.OUT, value=0, invert=True)
+    pin_config["d1"].init(PinPlus.Pin.OUT, value=0)
+
+def _initialize_pins() -> None:
+    for pin_id in set(pin_aliases.values()):
+        pin_config[pin_id] = PinPlus(pin_id)
 
 
-def configure_pins() -> None:
-    pin_id = pin_aliases["led"]
-    pin_config[pin_id] = PinPlus(pin_id, PinPlus.Pin.OUT, value=1, invert=True)
+def pin(pin_id_or_alias:Union[str, int]) -> Optional[PinPlus]:
+    if isinstance(pin_id_or_alias, str):
+        pin_id = pin_aliases.get(pin_id_or_alias)
+    else:
+        pin_id = pin_id_or_alias
 
-    pin_id = pin_aliases["d1"]
-    pin_config[pin_id] = PinPlus(pin_id, PinPlus.Pin.OUT, value=0)
-
-
-def pin(pin_id_alias:Union[str, int]) -> Optional[PinPlus]:
-    if isinstance(pin_id_alias, str):
-        pin_id_alias = pin_aliases[pin_id_alias]
-
-    return pin_config.get(pin_id_alias)
+    return pin_config.get(pin_id)

@@ -29,6 +29,6 @@ def setup(app:Microdot) -> None:
         await gpio_modulate(pin_alias, *actions, repeat=repeat)
 
 
-    @app.errorhandler(exceptions.PinNotFound)
-    def not_found(request:Request, ex:exceptions.PinNotFound):
+    @app.errorhandler(exceptions.NotFound)
+    def not_found(request:Request, ex:exceptions.NotFound):
         return {"error": str(ex)}, 404
