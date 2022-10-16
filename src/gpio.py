@@ -1,23 +1,23 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from pinplus import PinPlus
 
-pin_aliases:Dict[str, int] = {}
+pin_names:Dict[str, int] = {}
 pin_config:Dict[int, PinPlus] = {}
 
 
-def setup(aliases:Dict[str, int]) -> None:
-    pin_aliases.update(aliases)
+def setup(names:Dict[str, int], config:Dict[str, Any]) -> None:
+    pin_names.update(names)
     _initialize_pins()
 
 
 def _initialize_pins() -> None:
-    for pin_id in set(pin_aliases.values()):
+    for pin_id in set(pin_names.values()):
         pin_config[pin_id] = PinPlus(pin_id)
 
 
 def pin(pin_id_or_alias:str) -> Optional[PinPlus]:
-    pin_id = pin_aliases.get(pin_id_or_alias)
+    pin_id = pin_names.get(pin_id_or_alias)
     if not pin_id:
         try:
             pin_id = int(pin_id_or_alias)
