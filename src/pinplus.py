@@ -24,7 +24,7 @@ class PinPlus:
 
     def init(self, mode:int=..., pull:int=..., *, value:Any=..., drive:int=..., alt:int=...,
              invert:bool=...) -> None:
-        if invert is not None:
+        if invert is not ...:
             self.invert = invert
 
         if self.invert and value is not None:
