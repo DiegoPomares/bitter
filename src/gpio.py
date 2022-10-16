@@ -13,6 +13,7 @@ def setup(aliases:Dict[str, int]) -> None:
     pin_config["led"].init(PinPlus.Pin.OUT, value=0, invert=True)
     pin_config["d1"].init(PinPlus.Pin.OUT, value=0)
 
+
 def _initialize_pins() -> None:
     for pin_id in set(pin_aliases.values()):
         pin_config[pin_id] = PinPlus(pin_id)
