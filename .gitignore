@@ -4,3 +4,4 @@
 
 SECRET_*
 *.secret.*
+*.ignore

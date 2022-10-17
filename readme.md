@@ -8,9 +8,9 @@ This is a MicroPython application that provides an HTTP API to control GPIO port
 
 ![Board pinout](doc/wemosd1.webp)
 
+- **Docker:** Everything is compiled using containers for consistency, (see [installation instructions](https://docs.docker.com/get-docker/))
 - **Python 3.9.*:** It has to be 3.9.* specifically for compatibility with MicroPython
 - **[Poetry](https://python-poetry.org/docs/#installation):** Dependency management tool
-- **C compiler:** Install the necessary tools by running `sudo apt install build-essential` in Ubuntu/Debian based systems, or `xcode-select --install` in MacOS
 - **[Pyenv](https://github.com/pyenv/pyenv#simple-python-version-management-pyenv):** Optional, used to manage multiple Python versions and environments
 - **cURL:** The ubiquitous command line tool for making HTTP requests
 
