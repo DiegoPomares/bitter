@@ -1,13 +1,14 @@
 SHELL=/bin/bash
 .DEFAULT_GOAL := help
+.SUFFIXES:
 
 BOARD_SERIAL_DEVICE ?= /dev/ttyUSB0
 BOARD_BAUD_RATE := 460800
-ESPTOOL_ARGS := --port "$(BOARD_SERIAL_DEVICE)" --baud "$(BOARD_BAUD_RATE)"
+ESPTOOL_CMD := esptool.py --port "$(BOARD_SERIAL_DEVICE)" --baud "$(BOARD_BAUD_RATE)"
 
 RSHELL_BOARD_PATH := /pyboard
 RSHELL_BAUD_RATE := 115200
-RSHELL_ARGS := --port "$(BOARD_SERIAL_DEVICE)" --baud "$(RSHELL_BAUD_RATE)"
+RSHELL_CMD := rshell --port "$(BOARD_SERIAL_DEVICE)" --baud "$(RSHELL_BAUD_RATE)"
 
 MICROPYTHON_REPO_URL := https://github.com/micropython/micropython.git
 MICROPYTHON_VERSION := v1.19.1
@@ -18,14 +19,12 @@ MICROPYTHON_FROZEN_LIB_DIR := $(MICROPYTHON_TARGET_DIR)/modules
 MICROPYTHON_FIRMWARE := toolchain/$(MICROPYTHON_TARGET_DIR)/build-$(MICROPYTHON_TARGET_BOARD)/firmware-combined.bin
 MPYCROSS_BIN := toolchain/micropython/mpy-cross/mpy-cross
 
-DOCKER_REPOSITORY := larsks/esp-open-sdk:latest
-DOCKER_BASE_CMD := docker run --rm -v "$$PWD/toolchain:/opt" -u "$$UID" -w "/opt" "$(DOCKER_REPOSITORY)"
+SDK_DOCKER_REPOSITORY := larsks/esp-open-sdk:latest
+SDK_DOCKER_CMD := docker run --rm -v "$$PWD/toolchain:/opt" -u "$$UID" -w "/opt" "$(SDK_DOCKER_REPOSITORY)"
+SERIAL_DOCKER_IMAGE_SLUG := micropython_flash_tools:d0f6fc28f8bc
+SERIAL_DOCKER_CMD := docker run --rm -it -v "$$PWD:/opt" -w "/opt" --device=$(BOARD_SERIAL_DEVICE) "$(SERIAL_DOCKER_IMAGE_SLUG)"
 
 SOURCE_FILES := $(shell find src -type f)
-
-
-# Disable built-in implicit rules
-.SUFFIXES:
 
 
 toolchain/micropython:
@@ -33,13 +32,13 @@ toolchain/micropython:
 	git clone --branch "$(MICROPYTHON_VERSION)" "$(MICROPYTHON_REPO_URL)" toolchain/micropython
 
 $(MPYCROSS_BIN): toolchain/micropython
-	$(DOCKER_BASE_CMD) make -C micropython/mpy-cross
+	$(SDK_DOCKER_CMD) make -C micropython/mpy-cross
 
 $(MICROPYTHON_FIRMWARE): $(MPYCROSS_BIN) frozen
 	cd "toolchain/$(MICROPYTHON_FROZEN_LIB_DIR)" && git clean -dxf
 	cp -rp frozen/* "toolchain/$(MICROPYTHON_FROZEN_LIB_DIR)"
-	$(DOCKER_BASE_CMD) make -j -C "$(MICROPYTHON_TARGET_DIR)" submodules
-	$(DOCKER_BASE_CMD) make -j -C "$(MICROPYTHON_TARGET_DIR)" \
+	$(SDK_DOCKER_CMD) make -j -C "$(MICROPYTHON_TARGET_DIR)" submodules
+	$(SDK_DOCKER_CMD) make -j -C "$(MICROPYTHON_TARGET_DIR)" \
 		"BOARD=$(MICROPYTHON_TARGET_BOARD)" all
 
 
@@ -67,23 +66,55 @@ build: $(SOURCE_FILES) $(MICROPYTHON_FIRMWARE)  ## Compile the app and firmware
 		-exec bash -c "$$compile_mpy_script" find_exec_snippet {} \; ; \
 
 
+.PHONY: docker
+docker:
+	@docker image inspect "$(SERIAL_DOCKER_IMAGE_SLUG)" &> /dev/null || ( \
+		echo "Building docker image $(SERIAL_DOCKER_IMAGE_SLUG)"; \
+		poetry export --dev --without-hashes > .requirements.ignore && \
+		bash -c 'docker build -t "$(SERIAL_DOCKER_IMAGE_SLUG)" \
+			--build-arg REQUIREMENTS=.requirements.ignore \
+			.' \
+		rm -f .requirements.ignore \
+	)
+
+
 .PHONY: flash
-flash: dialout build  ## Write MicroPython firmware into the esp board
-	poetry run esptool.py $(ESPTOOL_ARGS) erase_flash
-	poetry run esptool.py $(ESPTOOL_ARGS) write_flash \
+flash: docker build  ## Write MicroPython firmware into the esp board
+	$(SERIAL_DOCKER_CMD) $(ESPTOOL_CMD) erase_flash
+	$(SERIAL_DOCKER_CMD) $(ESPTOOL_CMD) write_flash \
 		--flash_size=detect 0 "build/firmware.bin"
 
 
 .PHONY: push
-push: dialout build etc skel  ## Push precompiled application to the esp board and restart
-	poetry run rshell $(RSHELL_ARGS) rsync \
+push: docker build etc skel  ## Push precompiled application to the esp board and restart
+	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) rsync \
 		--all skel/ "$(RSHELL_BOARD_PATH)"
 
-	poetry run rshell $(RSHELL_ARGS) rsync \
+	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) rsync \
 		--all --mirror etc/ "$(RSHELL_BOARD_PATH)/etc"
 
-	poetry run rshell $(RSHELL_ARGS) rsync \
+	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) rsync \
 		--all --mirror build/app/ "$(RSHELL_BOARD_PATH)/app"
+
+
+.PHONY: attach
+attach: docker  ## Attach to the Python interpreter and start the application
+	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) repl '~ import main'
+
+
+.PHONY: reset
+reset: docker  ## Restart the board
+	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) repl '~ import machine ~ machine.reset() ~'
+
+
+.PHONY: rshell
+rshell: docker  ## Open rshell
+	exec $(SERIAL_DOCKER_CMD) $(RSHELL_CMD)
+
+
+.PHONY: repl
+repl: docker  ## Open a Python interpreter in the esp board
+	exec $(SERIAL_DOCKER_CMD) $(RSHELL_CMD) repl
 
 
 .PHONY: toolchain
@@ -94,33 +125,6 @@ toolchain: $(MPYCROSS_BIN)  ## Setup the tools for building the MicroPython firm
 compile: $(MPYCROSS_BIN) $(MICROPYTHON_FIRMWARE)   ## Compile the MicroPython firmware
 
 
-.PHONY: dialout
-dialout:  ## Validates the user can interact with the esp board via the serial port
-	@echo "Validating user is in the dialout group"
-	test "$$UID" = "0" || (id --name --groups | grep --quiet --word-regexp "dialout")
-	@echo "Ok"
-
-
-.PHONY: rshell
-rshell:  ## Open rshell
-	exec poetry run rshell $(RSHELL_ARGS)
-
-
-.PHONY: repl
-repl:  ## Open a Python interpreter in the esp board
-	exec poetry run rshell $(RSHELL_ARGS) repl
-
-
-.PHONY: reset
-reset:  ## Restart the board
-	poetry run rshell $(RSHELL_ARGS) repl '~ import machine ~ machine.reset() ~'
-
-
-.PHONY: attach
-attach:  ## Attach to the Python interpreter and start the application
-	poetry run rshell $(RSHELL_ARGS) repl '~ import main'
-
-
 .PHONY: clean
 clean:  ## Remove the compiled firmware and app
 	rm -rf build
@@ -128,7 +132,7 @@ clean:  ## Remove the compiled firmware and app
 
 
 .PHONY: wipe
-wipe:  ## Remove all generated artifacts in this repository
+wipe:  ## Remove all generated artifacts
 	rm -rf build toolchain
 
 

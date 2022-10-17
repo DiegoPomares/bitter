@@ -3,9 +3,12 @@ name = "fermax_plus"
 version = "0.0.0"
 description = ""
 authors = ["DiegoPomares"]
+packages = [
+    {include = "**/*.py", from = "frozen"}
+]
 
 [tool.poetry.dependencies]
-python = "~3.9"
+python = "^3.8"
 
 [tool.poetry.dev-dependencies]
 esptool = "^4.3"

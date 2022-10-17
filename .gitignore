@@ -1,7 +1,8 @@
-/.micropy
 /build
 /toolchain
 
-SECRET_*
 *.secret.*
 *.ignore
+
+__pycache__/
+*.py[cod]
