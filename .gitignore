@@ -1,5 +1,5 @@
 /.micropy
-/dist
+/build
 /toolchain
 
 SECRET_*

@@ -1,8 +1,7 @@
-import os
-os.chdir("/app")
-
 import sys
-sys.path.append("vendor")
+sys.path.clear()
+sys.path.extend(("", ".frozen", "/app"))
 
-import main
-main.main()
+
+import app.main
+app.main.main()

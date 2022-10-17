@@ -9,24 +9,38 @@ RSHELL_BOARD_PATH := /pyboard
 RSHELL_BAUD_RATE := 115200
 RSHELL_ARGS := --port "$(BOARD_SERIAL_DEVICE)" --baud "$(RSHELL_BAUD_RATE)"
 
+MICROPYTHON_REPO_URL := https://github.com/micropython/micropython.git
 MICROPYTHON_VERSION := v1.19.1
 MICROPYTHON_TARGET_PORT := esp8266
 MICROPYTHON_TARGET_BOARD := GENERIC
-MICROPYTHON_REPO_URL := https://github.com/micropython/micropython.git
+MICROPYTHON_TARGET_DIR := micropython/ports/$(MICROPYTHON_TARGET_PORT)
+MICROPYTHON_FROZEN_LIB_DIR := $(MICROPYTHON_TARGET_DIR)/modules
+MICROPYTHON_FIRMWARE := toolchain/$(MICROPYTHON_TARGET_DIR)/build-$(MICROPYTHON_TARGET_BOARD)/firmware-combined.bin
 MPYCROSS_BIN := toolchain/micropython/mpy-cross/mpy-cross
-XCOMPILER_PATH := xcompiler/xtensa-lx106-elf/bin
 
-ESP_IDF_VERSION := v4.4.2
-ESP_IDF_TARGET := esp32
-ESP_IDF_REPO := https://github.com/espressif/esp-idf.git
+DOCKER_REPOSITORY := larsks/esp-open-sdk:latest
+DOCKER_BASE_CMD := docker run --rm -v "$$PWD/toolchain:/opt" -u "$$UID" -w "/opt" "$(DOCKER_REPOSITORY)"
 
-DOCKER_ESP_SLUG := esptoolchain:latest
-DOCKER_READY_FILE := .docker_image_built.ignore
-
-USER := $(shell id -nu)
-UID := $(shell id -u)
-GID := $(shell id -g)
 SOURCE_FILES := $(shell find src -type f)
+
+
+# Disable built-in implicit rules
+.SUFFIXES:
+
+
+toolchain/micropython:
+	mkdir -p toolchain
+	git clone --branch "$(MICROPYTHON_VERSION)" "$(MICROPYTHON_REPO_URL)" toolchain/micropython
+
+$(MPYCROSS_BIN): toolchain/micropython
+	$(DOCKER_BASE_CMD) make -C micropython/mpy-cross
+
+$(MICROPYTHON_FIRMWARE): $(MPYCROSS_BIN) frozen
+	cd "toolchain/$(MICROPYTHON_FROZEN_LIB_DIR)" && git clean -dxf
+	cp -rp frozen/* "toolchain/$(MICROPYTHON_FROZEN_LIB_DIR)"
+	$(DOCKER_BASE_CMD) make -j -C "$(MICROPYTHON_TARGET_DIR)" submodules
+	$(DOCKER_BASE_CMD) make -j -C "$(MICROPYTHON_TARGET_DIR)" \
+		"BOARD=$(MICROPYTHON_TARGET_BOARD)" all
 
 
 # This snippet transforms a .py file into an .mpy file, while preserving timestamps
@@ -42,136 +56,80 @@ define compile_mpy_script
 endef
 export compile_mpy_script
 
-dist: toolchain $(SOURCE_FILES)  ## Compile the app into a distributable bundle
-	rm -rf dist
-	mkdir dist
+build: $(SOURCE_FILES) $(MICROPYTHON_FIRMWARE)  ## Compile the app and firmware
+	rm -rf build
+	mkdir -p build
 
-	cp -rp src dist/app
+	cp -p $(MICROPYTHON_FIRMWARE) build/firmware.bin
+	cp -rp src build/app
 
-	cd dist && find * -type f -name "*.py" \
+	cd build && find * -type f -name "*.py" \
 		-exec bash -c "$$compile_mpy_script" find_exec_snippet {} \; ; \
 
 
-.PHONY: docker
-docker: $(DOCKER_READY_FILE)  ## Build necessary docker images
-
-$(DOCKER_READY_FILE):
-	docker images -q "$(DOCKER_ESP_SLUG)" && exit 0
-
-	docker build \
-		-t "$(DOCKER_ESP_SLUG)" \
-		--build-arg USER="$(USER)" \
-		--build-arg UID="$(UID)" \
-		--build-arg GID="$(GID)" \
-		.
-
-	touch $(DOCKER_READY_FILE)
-
-toolchain:  toolchain/esp-idf toolchain/micropython  ## Setup the tools for building the MicroPython firmware
-	poetry install
-
-toolchain/esp-idf:
-	mkdir -p toolchain
-	git clone --recursive --branch "$(ESP_IDF_VERSION)" "$(ESP_IDF_REPO)" toolchain/esp-idf
-
-toolchain/micropython:
-	mkdir -p toolchain
-	git clone --branch "$(MICROPYTHON_VERSION)" "$(MICROPYTHON_REPO_URL)" toolchain/micropython
+.PHONY: flash
+flash: dialout build  ## Write MicroPython firmware into the esp board
+	poetry run esptool.py $(ESPTOOL_ARGS) erase_flash
+	poetry run esptool.py $(ESPTOOL_ARGS) write_flash \
+		--flash_size=detect 0 "build/firmware.bin"
 
 
-$(MPYCROSS_BIN): toolchain $(DOCKER_READY_FILE)
-	docker run --rm -it -v "$$PWD/toolchain:/opt" "$(DOCKER_ESP_SLUG)" \
-		make -C micropython/mpy-cross
+.PHONY: push
+push: dialout build etc skel  ## Push precompiled application to the esp board and restart
+	poetry run rshell $(RSHELL_ARGS) rsync \
+		--all skel/ "$(RSHELL_BOARD_PATH)"
+
+	poetry run rshell $(RSHELL_ARGS) rsync \
+		--all --mirror etc/ "$(RSHELL_BOARD_PATH)/etc"
+
+	poetry run rshell $(RSHELL_ARGS) rsync \
+		--all --mirror build/app/ "$(RSHELL_BOARD_PATH)/app"
 
 
-toolchain/expressif: toolchain $(DOCKER_READY_FILE)
-	mkdir -p toolchain/expressif
-	docker run --rm -it -v "$$PWD/toolchain:/opt" -e IDF_TOOLS_PATH="/opt/expressif" \
-		"$(DOCKER_ESP_SLUG)" \
-		bash -c 'cd esp-idf; ./install.sh "$(ESP_IDF_TARGET)"'
+.PHONY: toolchain
+toolchain: $(MPYCROSS_BIN)  ## Setup the tools for building the MicroPython firmware
 
 
-$(XCOMPILER_PATH): toolchain $(DOCKER_READY_FILE)
-	mkdir -p toolchain/xcompiler
-	docker run --rm -it -v "$$PWD/toolchain:/opt" \
-		"$(DOCKER_ESP_SLUG)" \
-		bash -c 'cd xcompiler; source ../micropython/tools/ci.sh && ci_esp8266_setup; \
-			echo touch "/opt/$(XCOMPILER_PATH)"'
-
-
-#build: toolchain/expressif $(MPYCROSS_BIN) frozenlib  ## Build the MicroPython firmware
-#	docker run --rm -it -v "$$PWD/toolchain:/opt" \
-#		-e IDF_TOOLS_PATH="/opt/expressif" -e BOARD="$(MICROPYTHON_TARGET_BOARD)" \
-#		"$(DOCKER_ESP_SLUG)" \
-#		bash -c 'cd esp-idf; source ./export.sh; \
-#			cd ../micropython/ports/$(MICROPYTHON_TARGET_PORT); \
-#			make submodules && make'
-
-
-build: $(XCOMPILER_PATH) $(MPYCROSS_BIN) $(DOCKER_READY_FILE) frozenlib  ## Build the MicroPython firmware
-	docker run --rm -it -v "$$PWD/toolchain:/opt" \
-		-e IDF_PATH="/opt/esp-idf" -e ESPIDF="/opt/esp-idf" \
-		-e BOARD="$(MICROPYTHON_TARGET_BOARD)" \
-		"$(DOCKER_ESP_SLUG)" \
-		bash -c 'export PATH="/opt/$(XCOMPILER_PATH):$$PATH"; \
-			cd "micropython/ports/$(MICROPYTHON_TARGET_PORT)"; \
-			make submodules && make'
+.PHONY: compile
+compile: $(MPYCROSS_BIN) $(MICROPYTHON_FIRMWARE)   ## Compile the MicroPython firmware
 
 
 .PHONY: dialout
 dialout:  ## Validates the user can interact with the esp board via the serial port
 	@echo "Validating user is in the dialout group"
-	test "$(shell id --user)" = "0" || (id --name --groups | grep --quiet --word-regexp "dialout")
+	test "$$UID" = "0" || (id --name --groups | grep --quiet --word-regexp "dialout")
 	@echo "Ok"
 
 
-.PHONY: flash-board
-flash-board: dialout toolchain build  ## Write MicroPython firmware into the esp board, only needed once
-	poetry run esptool.py $(ESPTOOL_ARGS) erase_flash
-	poetry run esptool.py $(ESPTOOL_ARGS) write_flash \
-		--flash_size=detect 0 "toolchain/$(MICROPYTHON_RELEASE)"
-
-
-.PHONY: push
-push: dialout toolchain dist config skel  ## Push bundled application to the esp board and restart
-	poetry run rshell $(RSHELL_ARGS) rsync \
-		--all skel/ "$(RSHELL_BOARD_PATH)"
-
-	poetry run rshell $(RSHELL_ARGS) rsync \
-		--all --mirror config/ "$(RSHELL_BOARD_PATH)/config"
-
-	poetry run rshell $(RSHELL_ARGS) rsync \
-		--all --mirror dist/app/ "$(RSHELL_BOARD_PATH)/app"
-
-
 .PHONY: rshell
-rshell: toolchain  ## Open rshell
+rshell:  ## Open rshell
 	exec poetry run rshell $(RSHELL_ARGS)
 
 
 .PHONY: repl
-repl: toolchain  ## Open a Python interpreter in the esp board
+repl:  ## Open a Python interpreter in the esp board
 	exec poetry run rshell $(RSHELL_ARGS) repl
 
 
 .PHONY: reset
-reset: toolchain  ## Restart the board
+reset:  ## Restart the board
 	poetry run rshell $(RSHELL_ARGS) repl '~ import machine ~ machine.reset() ~'
 
 
 .PHONY: attach
-attach: toolchain  ## Attach to the Python interpreter and start the application
-	poetry run rshell $(RSHELL_ARGS) repl '~ exec(open("main.py").read())'
-
-
-.PHONY: wipe
-wipe: clean  ## Remove all generated artifacts in this repository
-	rm -rf build toolchain
+attach:  ## Attach to the Python interpreter and start the application
+	poetry run rshell $(RSHELL_ARGS) repl '~ import main'
 
 
 .PHONY: clean
-clean:  ## Remove the compiled app
-	rm -rf dist
+clean:  ## Remove the compiled firmware and app
+	rm -rf build
+	cd "toolchain/$(MICROPYTHON_TARGET_DIR)" && git clean -dxf || true
+
+
+.PHONY: wipe
+wipe:  ## Remove all generated artifacts in this repository
+	rm -rf build toolchain
 
 
 .PHONY: help
