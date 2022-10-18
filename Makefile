@@ -21,7 +21,7 @@ MPYCROSS_BIN := toolchain/micropython/mpy-cross/mpy-cross
 
 SDK_DOCKER_REPOSITORY := larsks/esp-open-sdk:latest
 SDK_DOCKER_CMD := docker run --rm -v "$$PWD/toolchain:/opt" -u "$$UID" -w "/opt" "$(SDK_DOCKER_REPOSITORY)"
-SERIAL_DOCKER_IMAGE_SLUG := micropython_flash_tools:d0f6fc28f8bc
+SERIAL_DOCKER_IMAGE_SLUG := micropython_serial_tools:d0f6fc28f8bc
 SERIAL_DOCKER_CMD := docker run --rm -it -v "$$PWD:/opt" -w "/opt" --device=$(BOARD_SERIAL_DEVICE) "$(SERIAL_DOCKER_IMAGE_SLUG)"
 
 SOURCE_FILES := $(shell find src -type f)
@@ -70,11 +70,7 @@ build: $(SOURCE_FILES) $(MICROPYTHON_FIRMWARE)  ## Compile the app and firmware
 docker:
 	@docker image inspect "$(SERIAL_DOCKER_IMAGE_SLUG)" &> /dev/null || ( \
 		echo "Building docker image $(SERIAL_DOCKER_IMAGE_SLUG)"; \
-		poetry export --dev --without-hashes > .requirements.ignore && \
-		bash -c 'docker build -t "$(SERIAL_DOCKER_IMAGE_SLUG)" \
-			--build-arg REQUIREMENTS=.requirements.ignore \
-			.' \
-		rm -f .requirements.ignore \
+		docker build -t "$(SERIAL_DOCKER_IMAGE_SLUG)" docker \
 	)
 
 
@@ -97,6 +93,15 @@ push: docker build etc skel  ## Push precompiled application to the esp board an
 		--all --mirror build/app/ "$(RSHELL_BOARD_PATH)/app"
 
 
+.PHONY: show-ip
+show-ip:  ## Show the IP address of the board
+	@sleep 2  # Wait a bit to give the board a chance to setup the wlan config
+	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) repl "~ import utils ~ utils.show_ip() ~ utils.reset(soft=True) ~"
+
+
+.PHONY: all
+all: setup-wifi flash push restart  ## Same as: make setup-wifi flash push restart
+
 .PHONY: attach
 attach: docker  ## Attach to the Python interpreter and start the application
 	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) repl '~ import main'
@@ -104,7 +109,7 @@ attach: docker  ## Attach to the Python interpreter and start the application
 
 .PHONY: reset
 reset: docker  ## Restart the board
-	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) repl '~ import machine ~ machine.reset() ~'
+	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) repl '~ import utils ~ utils.reset() ~'
 
 
 .PHONY: rshell

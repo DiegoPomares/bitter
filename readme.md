@@ -8,7 +8,7 @@ This is a MicroPython application that provides an HTTP API to control GPIO port
 
 ![Board pinout](doc/wemosd1.webp)
 
-- **Docker:** Everything is compiled using containers for consistency, to avoid cluttering the system, and because it's easier (see [installation instructions](https://docs.docker.com/get-docker/)).
+- **Docker:** Everything is compiled and executed using Docker containers for consistency, and to avoid cluttering the system (see [installation instructions](https://docs.docker.com/get-docker/)).
 
 ## Quickstart
 
@@ -39,8 +39,7 @@ make push
 ## 5. Restart the board
 make restart
 
-## 6. Show the IP address, you might need to run this several times
-************************ TODO ************************
+## 6. Show the IP address
 make show-ip
 
 ## 7. Test the API
@@ -64,13 +63,13 @@ curl -H "Content-Type: application/json" -X POST '{"script": "on"}' "http://$ESP
 
 ## Development
 
-### Setup
+### Dev requirements
 
-zxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-- Python: 3.8 or greater
+- Python 3.9: The version implemented by MicroPython
 - [Poetry](https://python-poetry.org/docs/#installation): dependency management tool
+- curl: Or the HTTP client of your choice
 
+Setup the dev environment with `poetry install`
 
 ### Tools
 
@@ -102,7 +101,8 @@ The project has a very simple structure:
 - **`etc/`**: This directory contains the application configuration in json files, it's copied as-is into the root directory of the board.
 - **`skel/`**: Scaffold used to launch the application automatically when the board boots up and to setup low level base board configuration. The contents of this directory are copied as-is into the root directory of the board.
 - **`frozen/`**: The modules that are compiled into the MicroPython firmware (see [Notes](#notes) for more info).
-- **`src/`**: The ppplication source code, the contents of this directory copied into `/app` in the board with rsync.
+- **`src/`**: The application source code, the contents of this directory copied into `/app` in the board with rsync.
+- **`docker/`**: The files for building the Docker image used to interact with the board via serial device.
 
 ## Notes
 
