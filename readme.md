@@ -65,11 +65,13 @@ curl -H "Content-Type: application/json" -X POST '{"script": "on"}' "http://$ESP
 
 ### Dev requirements
 
-- Python 3.9: The version implemented by MicroPython
-- [Poetry](https://python-poetry.org/docs/#installation): dependency management tool
-- curl: Or the HTTP client of your choice
+- Python 3.9: The version implemented by MicroPython.
+- [Poetry](https://python-poetry.org/docs/#installation): dependency management tool.
+- curl: Or the HTTP client of your choice.
 
-Setup the dev environment with `poetry install`
+Setup the dev environment with `poetry install`, this will create a virtualenv with all necessary dependencies installed. Make sure to point your IDE to this virtualenv to make use of the MicroPython stubs.
+
+See [pyenv](https://github.com/pyenv/pyenv) if you need a Python version management tool.
 
 ### Tools
 
