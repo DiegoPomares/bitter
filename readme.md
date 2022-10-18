@@ -46,7 +46,7 @@ make show-ip
 # Get onboard led status
 curl "http://$BOARD_IP/gpio/led/"
 # Turn on the onboard led
-curl -H "Content-Type: application/json" -X POST '{"script": "on"}' "http://$ESP_BOARD_IP/gpio/led/"
+curl -H "Content-Type: application/json" -X POST '{"script": "on"}' "http://$BOARD_IP/gpio/led/"
 # Make the led blink
 ************************ TODO ************************
 ```

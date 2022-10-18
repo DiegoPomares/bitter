@@ -1,11 +1,12 @@
 from typing import Any, Dict, Optional
 
-from actions import gpio_state, gpio_modulate
 import exceptions
+from actions import gpio_state, gpio_modulate
 from microdot_asyncio import Microdot, Request, Response
 
 Response.default_content_type = 'application/json'
 app = Microdot()
+
 
 def start() -> None:
     app.run(port=80, debug=True)
@@ -26,11 +27,16 @@ async def post_gpio(request:Request, pin_id_or_alias:str) -> None:
     if not (body := request.json):
         return None, 400
 
-    actions = body["actions"]
-    repeat = body.pop("repeat", 0)
-    await gpio_modulate(pin_id_or_alias, *actions, repeat=repeat)
+    cmd = body["cmd"]
+    if cmd == "modulate":
+        script = body["script"]
+        times = body.pop("times", 1)
+        await gpio_modulate(pin_id_or_alias, *script, times=times)
+
+    return {"error": f"Unknown command {cmd}"}, 400
 
 
 @app.errorhandler(exceptions.NotFound)
-def not_found(request:Request, ex:exceptions.NotFound):
+async def not_found(request:Request, ex:exceptions.NotFound):
     return {"error": str(ex)}, 404
+
