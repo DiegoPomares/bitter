@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional
 
+import uasyncio
+
 from actions import gpio_state, gpio_modulate
 from exceptions import MissingField, NotFound, SchemaError
 from microdot_asyncio import Microdot, Request, Response
@@ -27,15 +29,20 @@ async def post_gpio(request:Request, pin_id_or_alias:str) -> None:
     if not (body := request.json):
         return None, 400
 
+    dispatcher = None
     cmd = get_field(body, "cmd")
     if cmd == "modulate":
         script = get_field(body, "script")
         times = body.pop("times", 1)
-        await gpio_modulate(pin_id_or_alias, *script, times=times)
+        dispatcher = gpio_modulate(pin_id_or_alias, *script, times=times)
 
     else:
         raise SchemaError(f"Unknown command '{cmd}'")
 
+    if request.args.get("wait", "") in ("true", "yes"):
+        await dispatcher
+    else:
+        uasyncio.create_task(dispatcher)
 
 @app.errorhandler(NotFound)
 async def not_found(request:Request, ex:NotFound):

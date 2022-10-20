@@ -22,7 +22,6 @@ async def gpio_modulate(pin_id_or_alias:str, *actions:str, times:int) -> None:
     if times < 1:
         iterator = count()
 
-    print(actions, times, iterator)
     for _ in iterator:
         for action in actions:
             if action == "high":
