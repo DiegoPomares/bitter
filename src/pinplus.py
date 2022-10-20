@@ -7,6 +7,34 @@ class PinPlus:
     # machine.Pin is wrapped because inheriting from it causes super() to misbehave ¯\_(ツ)_/¯
     Pin = machine.Pin
 
+    defaults = {
+        "mode": 0,
+        "pull": None,
+        "drive": 0,
+        "alt": None,
+    }
+
+    consts = {
+        ...: ...,
+        "IN": 0,
+        "OUT": 1,
+        "OPEN_DRAIN": 2,
+        "PULL_UP": 1,
+        "IRQ_RISING": 1,
+        "IRQ_FALLING": 2,
+        # Consts below this point HAVE NOT BEING VALIDATED
+        "ALT": 3,
+        "ALT_OPEN_DRAIN": 4,
+        "ANALOG": 5,
+        "PULL_DOWN": 0,
+        "PULL_HOLD": 2,
+        "DRIVE_0": 0,
+        "DRIVE_1": 1,
+        "DRIVE_2": 2,
+        "IRQ_HIGH_LEVEL": 4,
+        "IRQ_LOW_LEVEL": 8,
+    }
+
     def __init__(self, pin_id:int, mode:int=..., pull:int=..., *, value:Any=..., drive:int=..., alt:int=...,
                  invert:bool=False):
         self._pin_id = pin_id
@@ -70,3 +98,18 @@ class PinPlus:
 
     def modulate(script:List[str]) -> Callable[[], None]:
         pass
+
+    def easy_config(self, *, mode:str=..., pull:str=..., value:Any=..., drive:str=..., alt:str=...,
+                    invert:bool=...) -> None:
+        args = (
+            self.consts[mode],
+            self.consts[pull],
+        )
+        kwargs = {
+            "value": value,
+            "drive": self.consts[drive],
+            "alt": self.consts[alt],
+            "invert": invert,
+        }
+        args, kwargs = self._filter_ellipsis(*args, **kwargs)
+        self.init(*args, **kwargs)

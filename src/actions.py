@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import uasyncio
 
-from exceptions import PinNotFound, SchemaError
+from exceptions import PinNotFound
 from gpio import pin
 
 
