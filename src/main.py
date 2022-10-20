@@ -12,7 +12,6 @@ def main() -> None:
     gpio_config = config.read_config("/etc/gpio_config.json")
     gpio.setup(pin_names["gpio"], gpio_config)
 
-
     routes.start()
 
 

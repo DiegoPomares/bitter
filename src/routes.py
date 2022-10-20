@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional
 
-import exceptions
 from actions import gpio_state, gpio_modulate
+from exceptions import MissingField, NotFound, SchemaError
 from microdot_asyncio import Microdot, Request, Response
 
 Response.default_content_type = 'application/json'
@@ -27,16 +27,28 @@ async def post_gpio(request:Request, pin_id_or_alias:str) -> None:
     if not (body := request.json):
         return None, 400
 
-    cmd = body["cmd"]
+    cmd = get_field(body, "cmd")
     if cmd == "modulate":
-        script = body["script"]
+        script = get_field(body, "script")
         times = body.pop("times", 1)
         await gpio_modulate(pin_id_or_alias, *script, times=times)
 
-    return {"error": f"Unknown command {cmd}"}, 400
+    else:
+        raise SchemaError(f"Unknown command '{cmd}'")
 
 
-@app.errorhandler(exceptions.NotFound)
-async def not_found(request:Request, ex:exceptions.NotFound):
+@app.errorhandler(NotFound)
+async def not_found(request:Request, ex:NotFound):
     return {"error": str(ex)}, 404
 
+
+@app.errorhandler(SchemaError)
+async def not_found(request:Request, ex:SchemaError):
+    return {"error": str(ex)}, 400
+
+
+def get_field(d:Dict, key:str) -> Any:
+    if key not in d:
+        raise MissingField(f"Missing field: {key}")
+
+    return d[key]

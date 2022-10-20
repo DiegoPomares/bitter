@@ -25,6 +25,7 @@ SERIAL_DOCKER_IMAGE_SLUG := micropython_serial_tools:d0f6fc28f8bc
 SERIAL_DOCKER_CMD := docker run --rm -it -v "$$PWD:/opt" -w "/opt" --device=$(BOARD_SERIAL_DEVICE) "$(SERIAL_DOCKER_IMAGE_SLUG)"
 
 SOURCE_FILES := $(shell find src -type f)
+FROZEN_FILES := $(shell find frozen -type f)
 
 
 toolchain/micropython:
@@ -34,7 +35,7 @@ toolchain/micropython:
 $(MPYCROSS_BIN): toolchain/micropython
 	$(SDK_DOCKER_CMD) make -C micropython/mpy-cross
 
-$(MICROPYTHON_FIRMWARE): $(MPYCROSS_BIN) frozen
+$(MICROPYTHON_FIRMWARE): $(MPYCROSS_BIN) $(FROZEN_FILES)
 	cd "toolchain/$(MICROPYTHON_FROZEN_LIB_DIR)" && git clean -dxf
 	cp -rp frozen/* "toolchain/$(MICROPYTHON_FROZEN_LIB_DIR)"
 	$(SDK_DOCKER_CMD) make -j -C "$(MICROPYTHON_TARGET_DIR)" submodules
