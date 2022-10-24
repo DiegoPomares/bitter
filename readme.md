@@ -1,6 +1,6 @@
-# ⚠️ Work in progress ⚠️
+# Bitter
 
-This is a MicroPython application that provides an HTTP API to control GPIO ports remotely.
+Bitter is a MicroPython application that provides an HTTP API to control GPIO ports remotely.
 
 ## Requirements
 
