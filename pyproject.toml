@@ -1,16 +1,22 @@
 [tool.poetry]
-name = "fermax_plus"
+name = "bitter"
 version = "0.0.0"
 description = ""
 authors = ["DiegoPomares"]
+packages = [
+    { include = "**/*.py", from = "frozen" }
+]
 
 [tool.poetry.dependencies]
-python = "~3.9"
+python = "3.9.*"
+esptool = { version = "^4.3", optional = true }
+rshell = { version = "^0.0.31", optional = true }
 
 [tool.poetry.dev-dependencies]
-esptool = "^4.3"
-rshell = "^0.0.31"
 micropython-esp8266-stubs = "1.19.1.*"
+
+[tool.poetry.extras]
+serial = ["esptool", "rshell"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

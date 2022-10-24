@@ -1,0 +1,7 @@
+{
+    "led": {
+        "mode": "OUT",
+        "invert": true,
+        "value": 0
+    }
+}

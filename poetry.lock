@@ -2,16 +2,16 @@
 name = "bitstring"
 version = "3.1.9"
 description = "Simple construction, analysis and modification of binary data."
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = "*"
 
 [[package]]
 name = "cffi"
 version = "1.15.1"
 description = "Foreign Function Interface for Python calling C code."
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -21,8 +21,8 @@ pycparser = "*"
 name = "cryptography"
 version = "38.0.2"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=3.6"
 
 [package.dependencies]
@@ -40,8 +40,8 @@ test = ["pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-subtests",
 name = "ecdsa"
 version = "0.18.0"
 description = "ECDSA cryptographic signature library (pure python)"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [package.dependencies]
@@ -55,8 +55,8 @@ gmpy2 = ["gmpy2"]
 name = "esptool"
 version = "4.3"
 description = "A serial utility to communicate & flash code to Espressif chips."
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -81,24 +81,24 @@ python-versions = ">=3.8,<4.0"
 name = "pycparser"
 version = "2.21"
 description = "C parser in Python"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "pyreadline"
 version = "2.1"
 description = "A python implmementation of GNU readline."
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = "*"
 
 [[package]]
 name = "pyserial"
 version = "3.5"
 description = "Python Serial Port Extension"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = "*"
 
 [package.extras]
@@ -108,24 +108,24 @@ cp2110 = ["hidapi"]
 name = "pyudev"
 version = "0.24.0"
 description = "A libudev binding"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=3.7"
 
 [[package]]
 name = "reedsolo"
 version = "1.5.4"
 description = "Pure-Python Reed Solomon encoder/decoder"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = "*"
 
 [[package]]
 name = "rshell"
 version = "0.0.31"
 description = "A remote shell for working with MicroPython boards."
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = "*"
 
 [package.dependencies]
@@ -137,14 +137,17 @@ pyudev = ">=0.16"
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+
+[extras]
+serial = ["esptool", "rshell"]
 
 [metadata]
 lock-version = "1.1"
-python-versions = "~3.9"
-content-hash = "8e63e186a13456f8a8c378d3a13e6be1ac0187ae8236964473e9e6d17e6bc6d2"
+python-versions = "3.9.*"
+content-hash = "1e5a1aeaf12b3a8723544561ddc6942bd3442e1f30ea9a7b9c335dc2e5341700"
 
 [metadata.files]
 bitstring = []
