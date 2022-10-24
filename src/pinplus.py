@@ -10,42 +10,28 @@ class PinPlus:
     Pin = machine.Pin
 
     defaults = {
-        "mode": 0,
+        "mode": "IN",
         "pull": None,
-        "drive": 0,
+        "drive": None,
         "alt": None,
-    }
-
-    consts = {
-        ...: ...,
-        "IN": 0,
-        "OUT": 1,
-        "OPEN_DRAIN": 2,
-        "PULL_UP": 1,
-        "IRQ_RISING": 1,
-        "IRQ_FALLING": 2,
-        # Consts below this point HAVE NOT BEING VALIDATED
-        "ALT": 3,
-        "ALT_OPEN_DRAIN": 4,
-        "ANALOG": 5,
-        "PULL_DOWN": 0,
-        "PULL_HOLD": 2,
-        "DRIVE_0": 0,
-        "DRIVE_1": 1,
-        "DRIVE_2": 2,
-        "IRQ_HIGH_LEVEL": 4,
-        "IRQ_LOW_LEVEL": 8,
     }
 
     def __init__(self, pin_id:int, mode:int=..., pull:int=..., *, value:Any=..., drive:int=..., alt:int=...,
                  invert:bool=False):
         self._pin_id = pin_id
+        self._pin_state = self.defaults.copy()
         self.invert = invert
         if self.invert and value is not ...:
             value = not bool(value)
 
         args, kwargs = self._filter_ellipsis(pin_id, mode, pull, value=value, drive=drive, alt=alt)
         self._pin = self.Pin(*args, **kwargs)
+
+    @classmethod
+    def _pinattr(cls, attr_name:str) -> Any:
+        if attr_name is ...:
+            return ...
+        return getattr(cls.Pin, attr_name)
 
     @staticmethod
     def _filter_ellipsis(*args:Any, **kwargs:Any) -> Tuple(Tuple(Any), Dict[str, Any]):
@@ -95,23 +81,31 @@ class PinPlus:
         args, kwargs = self._filter_ellipsis(priority=priority, wake=wake, hard=hard)
         self._pin.irq(callback, trigger, *args, **kwargs)
 
+    def _save_pin_state(self, mode:str=..., pull:str=..., drive:str=..., alt:str=...) -> None:
+        _, kwargs = self._filter_ellipsis(mode=mode, pull=pull, drive=drive, alt=alt)
+        self._pin_state.update(kwargs)
+
     def state(self) -> Dict[str, Any]:
-        pass
+        pin_state = {
+            "value": bool(self.value()),
+            "config": {
+                "id": self._pin_id,
+                "inverted": self.invert,
+            },
+        }
+
+        pin_state["config"].update(self._pin_state)
+        return pin_state
+
 
     def easy_config(self, *, mode:str=..., pull:str=..., value:Any=..., drive:str=..., alt:str=...,
                     invert:bool=...) -> None:
-        args = (
-            self.consts[mode],
-            self.consts[pull],
+        args, kwargs = self._filter_ellipsis(
+            self._pinattr(mode), self._pinattr(pull),
+            value=value, drive=self._pinattr(drive), alt=self._pinattr(alt), invert=invert
         )
-        kwargs = {
-            "value": value,
-            "drive": self.consts[drive],
-            "alt": self.consts[alt],
-            "invert": invert,
-        }
-        args, kwargs = self._filter_ellipsis(*args, **kwargs)
         self.init(*args, **kwargs)
+        self._save_pin_state(mode=mode, pull=pull, drive=drive, alt=alt)
 
     async def modulate(self, *actions:str, times:int=1) -> Callable[[], None]:
         iterator = range(times)
@@ -122,11 +116,11 @@ class PinPlus:
             for action in actions:
                 if action == "on":
                     self.on()
-                    uasyncio.sleep_ms(1)
+                    await uasyncio.sleep_ms(1)
 
                 elif action == "off":
                     self.off()
-                    uasyncio.sleep_ms(1)
+                    await uasyncio.sleep_ms(1)
 
                 elif action.startswith("delay "):
                     _, ms_str = action.split(" ", 1)

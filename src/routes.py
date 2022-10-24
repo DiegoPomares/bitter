@@ -24,10 +24,7 @@ async def get_mem(_request:Request) -> None:
 @app.get("/gpio/<pin_id_or_alias>")
 async def get_gpio(_request:Request, pin_id_or_alias:str) -> None:
     state = await gpio_state(pin_id_or_alias)
-    return {
-        "pin": pin_id_or_alias,
-        "state": bool(state),
-    }
+    return state
 
 
 @app.post("/gpio/<pin_id_or_alias>")
