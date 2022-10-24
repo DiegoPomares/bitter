@@ -15,8 +15,8 @@ Bitter is a MicroPython application that provides an HTTP API to control GPIO po
 ### TL;DR
 
 ```bash
-BOARD_SERIAL_DEVICE=/dev/... make all
-curl "http://$BOARD_IP/gpio/led/"
+BOARD_SERIAL_DEVICE=/dev/... make all show-ip
+curl "http://<BOARD IP ADDRESS>/gpio/led"
 ```
 
 ### Step by step
@@ -43,11 +43,11 @@ make show-ip
 
 ## 7. Test the API
 # Get onboard led status
-curl "http://$BOARD_IP/gpio/led/"
+curl "http://<BOARD IP ADDRESS>/gpio/led"
 # Turn on the onboard led
-curl -H "Content-Type: application/json" -X POST '{"cmd": "on"}' "http://$BOARD_IP/gpio/led/"
+curl -X POST -H "Content-Type: application/json" -d '{"cmd": "on"}' "http://<BOARD IP ADDRESS>/gpio/led"
 # Make the led blink
-curl -X POST -H "Content-Type: application/json" -d '{"cmd": "modulate", "times": 10, "script": ["on", "delay 100", "off", "delay 100"]}' "http://$BOARD_IP/gpio/led"
+curl -X POST -H "Content-Type: application/json" -d '{"cmd": "modulate", "times": 10, "script": ["on", "delay 100", "off", "delay 100"]}' "http://<BOARD IP ADDRESS>/gpio/led"
 ```
 
 ### HTTP API spec

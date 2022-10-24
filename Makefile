@@ -103,7 +103,9 @@ setup-wifi:  ## Setup wifi credentials
 	else \
 		echo "Configuring wifi credentials..."; \
 		read -p "SSID (wifi network name): " ssid; \
-		read -sp "Password: " pass; \
+		ssid="$$(sed 's/"/\\"/g' <<< "$$ssid")"; \
+		read -p "Password: " pass; \
+		pass="$$(sed 's/"/\\"/g' <<< "$$pass")"; \
 		echo -e "{\n    \"ssid\": \"$$ssid\",\n    \"key\": \"$$pass\"\n}" > "$(WIFI_CREDENTIALS_FILE)"; \
 		echo -e "\nWifi credentials configured: $(WIFI_CREDENTIALS_FILE)"; \
 	fi
@@ -116,7 +118,7 @@ show-ip:  ## Show the IP address of the board
 
 
 .PHONY: all
-all: setup-wifi flash push restart  ## Same as: make setup-wifi flash push restart
+all: setup-wifi flash push reset  ## Same as: make setup-wifi flash push reset
 
 .PHONY: attach
 attach: docker  ## Attach to the Python interpreter and start the application
