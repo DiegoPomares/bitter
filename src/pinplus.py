@@ -1,6 +1,8 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from itertools import count
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import machine
+import uasyncio
 
 
 class PinPlus:
@@ -96,9 +98,6 @@ class PinPlus:
     def state(self) -> Dict[str, Any]:
         pass
 
-    def modulate(script:List[str]) -> Callable[[], None]:
-        pass
-
     def easy_config(self, *, mode:str=..., pull:str=..., value:Any=..., drive:str=..., alt:str=...,
                     invert:bool=...) -> None:
         args = (
@@ -113,3 +112,29 @@ class PinPlus:
         }
         args, kwargs = self._filter_ellipsis(*args, **kwargs)
         self.init(*args, **kwargs)
+
+    async def modulate(self, *actions:str, times:int=1) -> Callable[[], None]:
+        iterator = range(times)
+        if times < 1:
+            iterator = count()
+
+        for _ in iterator:
+            for action in actions:
+                if action == "on":
+                    self.on()
+                    uasyncio.sleep_ms(1)
+
+                elif action == "off":
+                    self.off()
+                    uasyncio.sleep_ms(1)
+
+                elif action.startswith("delay "):
+                    _, ms_str = action.split(" ", 1)
+                    try:
+                        ms = int(ms_str)
+                        await uasyncio.sleep_ms(ms)
+                    except ValueError:
+                        pass  # TODO: think how to handle faulty delays
+
+                else:
+                    pass  # TODO: think how to handle faulty actions

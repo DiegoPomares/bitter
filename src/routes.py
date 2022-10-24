@@ -2,16 +2,23 @@ from typing import Any, Dict, Optional
 
 import uasyncio
 
-from actions import gpio_state, gpio_modulate
+from actions import gpio_modulate, gpio_on, gpio_off, gpio_state
 from exceptions import MissingField, NotFound, SchemaError
 from microdot_asyncio import Microdot, Request, Response
 
-Response.default_content_type = 'application/json'
+Response.default_content_type = "application/json"
 app = Microdot()
 
 
 def start() -> None:
     app.run(port=80, debug=True)
+
+
+@app.get("/mem")
+async def get_mem(_request:Request) -> None:
+    import micropython
+    micropython.mem_info(True)
+    micropython.qstr_info(True)
 
 
 @app.get("/gpio/<pin_id_or_alias>")
@@ -31,7 +38,13 @@ async def post_gpio(request:Request, pin_id_or_alias:str) -> None:
 
     dispatcher = None
     cmd = get_field(body, "cmd")
-    if cmd == "modulate":
+    if cmd == "on":
+        dispatcher = gpio_on(pin_id_or_alias)
+
+    elif cmd == "off":
+        dispatcher = gpio_off(pin_id_or_alias)
+
+    elif cmd == "modulate":
         script = get_field(body, "script")
         times = body.pop("times", 1)
         dispatcher = gpio_modulate(pin_id_or_alias, *script, times=times)
@@ -43,6 +56,7 @@ async def post_gpio(request:Request, pin_id_or_alias:str) -> None:
         await dispatcher
     else:
         uasyncio.create_task(dispatcher)
+
 
 @app.errorhandler(NotFound)
 async def not_found(request:Request, ex:NotFound):

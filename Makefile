@@ -27,6 +27,8 @@ SERIAL_DOCKER_CMD := docker run --rm -it -v "$$PWD:/opt" -w "/opt" --device=$(BO
 SOURCE_FILES := $(shell find src -type f)
 FROZEN_FILES := $(shell find frozen -type f)
 
+WIFI_CREDENTIALS_FILE := etc/wifi.secret.json
+
 
 toolchain/micropython:
 	mkdir -p toolchain
@@ -92,6 +94,19 @@ push: docker build etc skel  ## Push precompiled application to the esp board an
 
 	$(SERIAL_DOCKER_CMD) $(RSHELL_CMD) rsync \
 		--all --mirror build/app/ "$(RSHELL_BOARD_PATH)/app"
+
+
+.PHONY: setup-wifi
+setup-wifi:  ## Setup wifi credentials
+	@if [[ -f "$(WIFI_CREDENTIALS_FILE)" ]]; then \
+		echo "Wifi cretentials found: $(WIFI_CREDENTIALS_FILE)"; \
+	else \
+		echo "Configuring wifi credentials..."; \
+		read -p "SSID (wifi network name): " ssid; \
+		read -sp "Password: " pass; \
+		echo -e "{\n    \"ssid\": \"$$ssid\",\n    \"key\": \"$$pass\"\n}" > "$(WIFI_CREDENTIALS_FILE)"; \
+		echo -e "\nWifi credentials configured: $(WIFI_CREDENTIALS_FILE)"; \
+	fi
 
 
 .PHONY: show-ip

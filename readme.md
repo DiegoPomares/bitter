@@ -27,7 +27,6 @@ curl "http://$BOARD_IP/gpio/led/"
 # export BOARD_SERIAL_DEVICE=/dev/...
 
 ## 2. Configure wifi credentials
-************************ TODO ************************
 make setup-wifi
 
 ## 3. Build the MicroPython firmware and flash it to the board
@@ -46,18 +45,42 @@ make show-ip
 # Get onboard led status
 curl "http://$BOARD_IP/gpio/led/"
 # Turn on the onboard led
-curl -H "Content-Type: application/json" -X POST '{"script": "on"}' "http://$BOARD_IP/gpio/led/"
+curl -H "Content-Type: application/json" -X POST '{"cmd": "on"}' "http://$BOARD_IP/gpio/led/"
 # Make the led blink
-************************ TODO ************************
+curl -X POST -H "Content-Type: application/json" -d '{"cmd": "modulate", "times": 10, "script": ["on", "delay 100", "off", "delay 100"]}' "http://$BOARD_IP/gpio/led"
 ```
 
 ### HTTP API spec
 
+All payloads are sent in json format (use the `Content-Type: application/json` header).
+
+#### GET /gpio/<pin_id_or_alias>
+
+Get the current state of the gpio pin.
+
+#### POST /gpio/<pin_id_or_alias>
+
+Payloads:
+
 ```json
-************************ TODO ************************
+// Turn a pin on/off
 {
-  "repeat": <NUMBER OF TIMES>,
-  "script": <COMMAND> | [<COMMAND>, ...]
+  "cmd": "on" | "off",
+}
+
+// Execute a set of actions in the given gpio pin
+{
+  "cmd": "modulate",
+
+  // [Optional] Number of times the script will be repeated (default: 1)
+  // If times is <=0 the script will be repeated indefinitely
+  "times": INT,
+
+  // The list of actions to execute, must be one of:
+  // "on": turn the pin on
+  // "off": turn the pin off
+  // "delay INT": wait for INT millisecs before the next action
+  "script": [COMMAND, ...]
 }
 ```
 
