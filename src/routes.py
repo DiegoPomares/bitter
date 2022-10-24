@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 import uasyncio
 
-from actions import gpio_modulate, gpio_on, gpio_off, gpio_state
+from actions import gpio_config, gpio_modulate, gpio_on, gpio_off, gpio_state
 from exceptions import MissingField, NotFound, SchemaError
 from microdot_asyncio import Microdot, Request, Response
 
@@ -23,8 +23,7 @@ async def get_mem(_request:Request) -> None:
 
 @app.get("/gpio/<pin_id_or_alias>")
 async def get_gpio(_request:Request, pin_id_or_alias:str) -> None:
-    state = await gpio_state(pin_id_or_alias)
-    return state
+    return await gpio_state(pin_id_or_alias)
 
 
 @app.post("/gpio/<pin_id_or_alias>")
@@ -55,13 +54,22 @@ async def post_gpio(request:Request, pin_id_or_alias:str) -> None:
         uasyncio.create_task(dispatcher)
 
 
+@app.put("/gpio/<pin_id_or_alias>")
+async def put_gpio(request:Request, pin_id_or_alias:str) -> None:
+    body:Optional[Dict[str, Any]]
+    if not (body := request.json):
+        return None, 400
+
+    return await gpio_config(pin_id_or_alias, body)
+
+
 @app.errorhandler(NotFound)
 async def not_found(request:Request, ex:NotFound):
     return {"error": str(ex)}, 404
 
 
 @app.errorhandler(SchemaError)
-async def not_found(request:Request, ex:SchemaError):
+async def schema_error(request:Request, ex:SchemaError):
     return {"error": str(ex)}, 400
 
 
