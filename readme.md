@@ -62,24 +62,24 @@ Get the current state of the gpio pin.
 
 Payloads:
 
-```json
-// Turn a pin on/off
+```yaml
+## Turn a pin on/off
 {
   "cmd": "on" | "off",
 }
 
-// Execute a set of actions in the given gpio pin
+## Execute a set of actions in the given gpio pin
 {
   "cmd": "modulate",
 
-  // [Optional] Number of times the script will be repeated (default: 1)
-  // If times is <=0 the script will be repeated indefinitely
+  # [Optional] Number of times the script will be repeated (default: 1)
+  # If times is <=0 the script will be repeated indefinitely
   "times": INT,
 
-  // The list of actions to execute, must be one of:
-  // "on": turn the pin on
-  // "off": turn the pin off
-  // "delay INT": wait for INT millisecs before the next action
+  # The list of actions to execute, must be one of:
+  # "on": turn the pin on
+  # "off": turn the pin off
+  # "delay INT": wait for INT millisecs before the next action
   "script": [COMMAND, ...]
 }
 ```
