@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 import uasyncio
 
-from actions import gpio_config, gpio_modulate, gpio_on, gpio_off, gpio_state
+from actions import gpio_blink, gpio_config, gpio_modulate, gpio_on, gpio_off, gpio_state
 from exceptions import MissingField, NotFound, SchemaError
 from microdot_asyncio import Microdot, Request, Response
 
@@ -33,15 +33,18 @@ async def post_gpio(request:Request, pin_id_or_alias:str) -> None:
         return None, 400
 
     dispatcher = None
-    cmd = get_field(body, "cmd")
+    cmd = _get_field(body, "cmd")
     if cmd == "on":
         dispatcher = gpio_on(pin_id_or_alias)
 
     elif cmd == "off":
         dispatcher = gpio_off(pin_id_or_alias)
 
+    elif cmd == "blink":
+        dispatcher = gpio_blink(pin_id_or_alias)
+
     elif cmd == "modulate":
-        script = get_field(body, "script")
+        script = _get_field(body, "script")
         times = body.pop("times", 1)
         dispatcher = gpio_modulate(pin_id_or_alias, *script, times=times)
 
@@ -73,7 +76,7 @@ async def schema_error(request:Request, ex:SchemaError):
     return {"error": str(ex)}, 400
 
 
-def get_field(d:Dict, key:str) -> Any:
+def _get_field(d:Dict, key:str) -> Any:
     if key not in d:
         raise MissingField(f"Missing field: {key}")
 

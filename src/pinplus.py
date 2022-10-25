@@ -116,11 +116,11 @@ class PinPlus:
             for action in actions:
                 if action == "on":
                     self.on()
-                    await uasyncio.sleep_ms(1)
+                    await uasyncio.sleep_ms(0)
 
                 elif action == "off":
                     self.off()
-                    await uasyncio.sleep_ms(1)
+                    await uasyncio.sleep_ms(0)
 
                 elif action.startswith("delay "):
                     _, ms_str = action.split(" ", 1)
