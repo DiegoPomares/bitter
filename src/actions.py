@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from exceptions import PinNotFound
+from exceptions import ActionError, PinNotFound
 from gpio import pin
 from pinplus import PinPlus
 
@@ -32,10 +32,12 @@ async def gpio_off(pin_id_or_alias:str) -> None:
 
 
 async def gpio_blink(pin_id_or_alias:str) -> None:
-    gpio_pin = _get_pin(pin_id_or_alias)
-    await gpio_pin.modulate("on", "delay 96", "off", "delay 96", times=12)
+    await gpio_modulate(pin_id_or_alias, "on", "delay 96", "off", "delay 96", "repeat 12")
 
 
-async def gpio_modulate(pin_id_or_alias:str, *actions:str, times:int) -> None:
+async def gpio_modulate(pin_id_or_alias:str, *actions:str) -> None:
     gpio_pin = _get_pin(pin_id_or_alias)
-    await gpio_pin.modulate(*actions, times=times)
+    try:
+        await gpio_pin.modulate(*actions)
+    except TypeError as ex:
+        raise ActionError(str(ex))
