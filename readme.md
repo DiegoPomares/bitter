@@ -63,9 +63,9 @@ Get the current state of the gpio pin.
 Payloads:
 
 ```yaml
-## Turn a pin on/off
+## Turn a pin on, off, or make it blink
 {
-  "cmd": "on" | "off",
+  "cmd": "on" | "off" | "blink",
 }
 
 ## Execute a set of actions in the given gpio pin
